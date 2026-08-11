@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import './App.css'
 import './interactive.css'
+import './menus.css'
 
 type Asset = {
   id: number
@@ -41,6 +42,10 @@ function App() {
   const [collectionOpen, setCollectionOpen] = useState(false)
   const [collectionName, setCollectionName] = useState('')
   const [collections, setCollections] = useState(['Brand essentials', 'Campaigns', 'Product photography'])
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [editingProfile, setEditingProfile] = useState(false)
+  const [profileName, setProfileName] = useState(() => localStorage.getItem('mediavault-profile-name') ?? 'Tariq Ali')
   const fileInput = useRef<HTMLInputElement>(null)
 
   const filteredAssets = useMemo(
@@ -90,6 +95,7 @@ function App() {
     } catch { /* Fall through to local confirmation for seed assets. */ }
     notify('Share link prepared for this demo asset')
   }
+  const saveProfile = () => { const name = profileName.trim() || 'Tariq Ali'; setProfileName(name); localStorage.setItem('mediavault-profile-name', name); setEditingProfile(false); notify('Profile name saved') }
 
   return (
     <main className="app-shell">
@@ -106,7 +112,7 @@ function App() {
           <button className="nav-item"><Star size={18} />Favorites</button>
           <button className="nav-item"><ShieldCheck size={18} />Access & security</button>
           <div className="storage"><div><span>Storage</span><b>68% of 100 GB</b></div><div className="progress"><i /></div><button>Manage plan</button></div>
-          <div className="profile"><span className="profile-avatar">TA</span><span><b>Tariq Ali</b><small>Workspace owner</small></span><MoreHorizontal size={18} /></div>
+          <div className="profile-wrap"><button className="profile" onClick={() => setProfileOpen((open) => !open)}><span className="profile-avatar">{profileName.split(' ').map((part) => part[0]).join('').slice(0, 2)}</span><span><b>{profileName}</b><small>Workspace owner</small></span><MoreHorizontal size={18} /></button>{profileOpen && <div className="profile-menu"><b>{profileName}</b><small>tariq@mediavault.demo</small><hr /><button onClick={() => { setEditingProfile(true); setProfileOpen(false) }}>Edit profile</button><button onClick={() => notify('Workspace settings opened')}>Workspace settings</button><button onClick={() => notify('You are already signed in')}>Sign out</button></div>}</div>
         </div>
       </aside>
 
@@ -114,7 +120,7 @@ function App() {
         <header className="topbar">
           <div className="mobile-brand">MediaVault</div>
           <label className="search"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search assets, tags, people..." /><kbd>⌘ K</kbd></label>
-          <button className="icon-button"><Bell size={19} /><i /></button>
+          <div className="notification-wrap"><button className="icon-button" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notifications"><Bell size={19} /><i /></button>{notificationsOpen && <div className="notification-menu"><div><b>Notifications</b><button onClick={() => notify('All notifications marked as read')}>Mark all read</button></div><article><span className="notice-dot" /><p><b>Olivia Reed</b> shared <em>Brand motion reel</em><small>12 minutes ago</small></p></article><article><span className="notice-dot violet-dot" /><p><b>Upload complete</b><br />3 new assets are ready to review.<small>38 minutes ago</small></p></article><article><span className="notice-dot green-dot" /><p><b>Campaign collection</b> was updated.<small>Yesterday</small></p></article></div>}</div>
           <button className="help">?</button>
         </header>
 
@@ -137,6 +143,7 @@ function App() {
       </section>
       {uploading && <div className="upload-modal"><CloudUpload size={32} /><strong>Preparing secure upload</strong><span>Checking file types and workspace permissions…</span><div className="modal-progress"><i /></div></div>}
       {collectionOpen && <div className="dialog-backdrop"><form className="dialog" onSubmit={(event) => { event.preventDefault(); void createCollection() }}><button type="button" className="close" onClick={() => setCollectionOpen(false)}><X size={18} /></button><Folder size={24} /><h2>Create collection</h2><p>Use collections to keep campaign assets organized.</p><input autoFocus value={collectionName} onChange={(event) => setCollectionName(event.target.value)} placeholder="e.g. Spring launch" /><button className="primary" type="submit">Create collection</button></form></div>}
+      {editingProfile && <div className="dialog-backdrop"><form className="dialog" onSubmit={(event) => { event.preventDefault(); saveProfile() }}><button type="button" className="close" onClick={() => setEditingProfile(false)}><X size={18} /></button><Users size={24} /><h2>Edit profile</h2><p>Update the name shown in this workspace.</p><input autoFocus value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="Your name" /><button className="primary" type="submit">Save changes</button></form></div>}
       {selectedAsset && <aside className="asset-drawer"><button className="close" onClick={() => setSelected(null)}><X size={18} /></button><div className={`drawer-preview ${selectedAsset.color}`}><span>{selectedAsset.type}</span></div><h2>{selectedAsset.name}</h2><p>{selectedAsset.size} · Added {selectedAsset.updated}</p><h3>Details</h3><dl><dt>Owner</dt><dd>{selectedAsset.owner}</dd><dt>Status</dt><dd>Available</dd><dt>Tags</dt><dd>{selectedAsset.labels.join(', ')}</dd></dl><button className="secondary" onClick={() => void shareAsset()}>Copy share link</button></aside>}
       {toast && <div className="toast"><ShieldCheck size={18} />{toast}</div>}
     </main>
