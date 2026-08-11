@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { ChangeEvent, useMemo, useRef, useState } from 'react'
 import {
   Bell, ChevronDown, Clock3, CloudUpload, FileImage, Folder,
   Grid2X2, LayoutList, MoreHorizontal, Plus, Search, ShieldCheck,
-  SlidersHorizontal, Sparkles, Star, Upload, Users,
+  SlidersHorizontal, Sparkles, Star, Upload, Users, X,
 } from 'lucide-react'
 import './App.css'
+import './interactive.css'
 
 type Asset = {
   id: number
@@ -18,7 +19,7 @@ type Asset = {
   featured?: boolean
 }
 
-const assets: Asset[] = [
+const initialAssets: Asset[] = [
   { id: 1, name: 'Autumn campaign hero', type: 'JPG', size: '8.4 MB', owner: 'Maya Chen', updated: 'Today, 10:42', labels: ['Campaign', 'Approved'], color: 'sunset', featured: true },
   { id: 2, name: 'Studio product set', type: 'PNG', size: '4.1 MB', owner: 'Samir Khan', updated: 'Today, 09:18', labels: ['Product'], color: 'blue' },
   { id: 3, name: 'Brand motion reel', type: 'MP4', size: '42.8 MB', owner: 'Olivia Reed', updated: 'Yesterday', labels: ['Video', 'Review'], color: 'violet' },
@@ -29,15 +30,22 @@ const assets: Asset[] = [
 
 function App() {
   const [query, setQuery] = useState('')
+  const [assets, setAssets] = useState(initialAssets)
   const [activeNav, setActiveNav] = useState('Library')
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [selected, setSelected] = useState<number | null>(null)
   const [uploading, setUploading] = useState(false)
   const [toast, setToast] = useState('')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [activeType, setActiveType] = useState('All')
+  const [collectionOpen, setCollectionOpen] = useState(false)
+  const [collectionName, setCollectionName] = useState('')
+  const [collections, setCollections] = useState(['Brand essentials', 'Campaigns', 'Product photography'])
+  const fileInput = useRef<HTMLInputElement>(null)
 
   const filteredAssets = useMemo(
-    () => assets.filter((asset) => asset.name.toLowerCase().includes(query.toLowerCase())),
-    [query],
+    () => assets.filter((asset) => asset.name.toLowerCase().includes(query.toLowerCase()) && (activeType === 'All' || asset.type === activeType)),
+    [activeType, assets, query],
   )
 
   const notify = (message: string) => {
@@ -45,22 +53,30 @@ function App() {
     window.setTimeout(() => setToast(''), 2600)
   }
 
-  const startUpload = async () => {
+  const startUpload = () => fileInput.current?.click()
+
+  const uploadFiles = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? [])
+    if (!files.length) return
     setUploading(true)
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'}/api/v1/assets`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-workspace-id': 'northstar-studio' },
-        body: JSON.stringify({ name: 'Untitled workspace upload', type: 'JPG', size: '2.4 MB' }),
-      })
-      if (!response.ok) throw new Error('Upload service rejected the asset')
-      notify('Asset created and queued for processing')
-    } catch {
-      notify('Demo upload queued locally — start the API to persist it')
-    } finally {
-      setUploading(false)
-    }
+    const additions = files.map((file, index) => ({ id: Date.now() + index, name: file.name, type: (file.name.split('.').pop() ?? 'FILE').toUpperCase(), size: `${(file.size / 1024 / 1024).toFixed(1)} MB`, owner: 'Tariq Ali', updated: 'Just now', labels: ['Processing'], color: ['blue', 'violet', 'green'][index % 3] }))
+    setAssets((current) => [...additions, ...current])
+    await Promise.all(files.map((file) => fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'}/api/v1/assets`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-workspace-id': 'northstar-studio' }, body: JSON.stringify({ name: file.name, type: (file.name.split('.').pop() ?? 'JPG').toUpperCase(), size: `${(file.size / 1024 / 1024).toFixed(1)} MB` }) }).catch(() => undefined)))
+    window.setTimeout(() => { setUploading(false); notify(`${files.length} asset${files.length > 1 ? 's' : ''} added to your library`) }, 500)
+    event.target.value = ''
   }
+
+  const createCollection = () => {
+    const name = collectionName.trim()
+    if (!name) return
+    setCollections((current) => [name, ...current])
+    setCollectionName('')
+    setCollectionOpen(false)
+    setActiveNav('Collections')
+    notify(`Collection “${name}” created`)
+  }
+
+  const selectedAsset = assets.find((asset) => asset.id === selected)
 
   return (
     <main className="app-shell">
@@ -68,6 +84,7 @@ function App() {
         <div className="brand"><span className="brand-mark"><Sparkles size={16} /></span>MediaVault</div>
         <div className="workspace-switcher"><span className="workspace-avatar">N</span><span><b>Northstar Studio</b><small>Creative workspace</small></span><ChevronDown size={16} /></div>
         <nav>
+          {activeNav === 'Collections' && <div className="collection-links">{collections.map((collection) => <button key={collection} onClick={() => notify(`Showing ${collection}`)}>{collection}</button>)}</div>}
           {[
             ['Library', Grid2X2], ['Collections', Folder], ['Shared with me', Users], ['Activity', Clock3],
           ].map(([label, Icon]) => <button key={String(label)} className={activeNav === label ? 'nav-item active' : 'nav-item'} onClick={() => setActiveNav(String(label))}><Icon size={18} />{String(label)}</button>)}
@@ -90,7 +107,7 @@ function App() {
 
         <div className="page">
           <div className="breadcrumb"><span>Library</span><b>/</b><span>All assets</span></div>
-          <div className="title-row"><div><h1>Asset library</h1><p>Organize, review and share your team’s creative work.</p></div><div className="actions"><button className="secondary"><Plus size={17} />New collection</button><button className="primary" onClick={startUpload}><Upload size={17} />Upload assets</button></div></div>
+          <div className="title-row"><div><h1>{activeNav === 'Library' ? 'Asset library' : activeNav}</h1><p>Organize, review and share your team’s creative work.</p></div><div className="actions"><button className="secondary" onClick={() => setCollectionOpen(true)}><Plus size={17} />New collection</button><button className="primary" onClick={startUpload}><Upload size={17} />Upload assets</button><input ref={fileInput} className="file-input" type="file" multiple onChange={uploadFiles} /></div></div>
 
           <section className="summary-grid">
             <article><span className="summary-icon blue"><FileImage size={20} /></span><div><small>Total assets</small><strong>1,284</strong><em>+12.6% this month</em></div></article>
@@ -99,13 +116,15 @@ function App() {
           </section>
 
           <section className="library-panel">
-            <div className="panel-top"><div><h2>{activeNav === 'Library' ? 'All assets' : activeNav}</h2><span>{filteredAssets.length} items</span></div><div className="panel-controls"><button className="filter"><SlidersHorizontal size={16} />Filter</button><div className="view-toggle"><button className={view === 'grid' ? 'selected' : ''} onClick={() => setView('grid')}><Grid2X2 size={17} /></button><button className={view === 'list' ? 'selected' : ''} onClick={() => setView('list')}><LayoutList size={17} /></button></div></div></div>
+            <div className="panel-top"><div><h2>{activeNav === 'Library' ? 'All assets' : activeNav}</h2><span>{filteredAssets.length} items</span></div><div className="panel-controls"><div className="filter-wrap"><button className="filter" onClick={() => setFilterOpen((open) => !open)}><SlidersHorizontal size={16} />Filter</button>{filterOpen && <div className="filter-menu"><b>File type</b>{['All', 'JPG', 'PNG', 'MP4', 'ZIP'].map((type) => <button key={type} className={activeType === type ? 'chosen' : ''} onClick={() => { setActiveType(type); setFilterOpen(false) }}>{type}</button>)}</div>}</div><div className="view-toggle"><button className={view === 'grid' ? 'selected' : ''} onClick={() => setView('grid')}><Grid2X2 size={17} /></button><button className={view === 'list' ? 'selected' : ''} onClick={() => setView('list')}><LayoutList size={17} /></button></div></div></div>
             {view === 'grid' ? <div className="asset-grid">{filteredAssets.map((asset) => <button key={asset.id} className={selected === asset.id ? 'asset-card selected' : 'asset-card'} onClick={() => setSelected(asset.id)}><div className={`asset-preview ${asset.color}`}><span>{asset.type}</span>{asset.featured && <b>Featured</b>}<i className="asset-shape" /></div><div className="asset-info"><strong>{asset.name}</strong><span>{asset.owner} · {asset.updated}</span><div>{asset.labels.map((label) => <small key={label}>{label}</small>)}</div></div></button>)}</div> : <div className="asset-list">{filteredAssets.map((asset) => <button key={asset.id} onClick={() => setSelected(asset.id)}><span className={`mini-preview ${asset.color}`} /><strong>{asset.name}</strong><span>{asset.type}</span><span>{asset.size}</span><span>{asset.owner}</span><span>{asset.updated}</span><MoreHorizontal size={18} /></button>)}</div>}
             {filteredAssets.length === 0 && <div className="empty"><Search size={28} /><h3>No assets found</h3><p>Try a different keyword or clear your search.</p></div>}
           </section>
         </div>
       </section>
       {uploading && <div className="upload-modal"><CloudUpload size={32} /><strong>Preparing secure upload</strong><span>Checking file types and workspace permissions…</span><div className="modal-progress"><i /></div></div>}
+      {collectionOpen && <div className="dialog-backdrop"><form className="dialog" onSubmit={(event) => { event.preventDefault(); createCollection() }}><button type="button" className="close" onClick={() => setCollectionOpen(false)}><X size={18} /></button><Folder size={24} /><h2>Create collection</h2><p>Use collections to keep campaign assets organized.</p><input autoFocus value={collectionName} onChange={(event) => setCollectionName(event.target.value)} placeholder="e.g. Spring launch" /><button className="primary" type="submit">Create collection</button></form></div>}
+      {selectedAsset && <aside className="asset-drawer"><button className="close" onClick={() => setSelected(null)}><X size={18} /></button><div className={`drawer-preview ${selectedAsset.color}`}><span>{selectedAsset.type}</span></div><h2>{selectedAsset.name}</h2><p>{selectedAsset.size} · Added {selectedAsset.updated}</p><h3>Details</h3><dl><dt>Owner</dt><dd>{selectedAsset.owner}</dd><dt>Status</dt><dd>Available</dd><dt>Tags</dt><dd>{selectedAsset.labels.join(', ')}</dd></dl><button className="secondary" onClick={() => notify('Share link copied to clipboard')}>Copy share link</button></aside>}
       {toast && <div className="toast"><ShieldCheck size={18} />{toast}</div>}
     </main>
   )

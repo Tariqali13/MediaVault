@@ -1,0 +1,24 @@
+.file-input { display: none; }
+.filter-wrap { position: relative; }
+.filter-menu { position: absolute; right: 0; top: 38px; z-index: 2; width: 135px; padding: 7px; background: #fff; border: 1px solid #e8eaf1; border-radius: 9px; box-shadow: 0 12px 24px #2024351c; }
+.filter-menu b { display: block; padding: 5px; color: #8a92a5; font-size: 11px; }
+.filter-menu button { width: 100%; padding: 7px; border: 0; border-radius: 5px; background: transparent; color: #626b82; font-size: 12px; text-align: left; }
+.filter-menu button:hover, .filter-menu .chosen { background: #f0efff; color: #5146df; }
+.collection-links { margin: 0 7px 10px; border-left: 1px solid #e3e5ee; }
+.collection-links button { display: block; width: 100%; padding: 6px 12px; border: 0; background: transparent; color: #7f8799; font-size: 12px; text-align: left; }
+.collection-links button:hover { color: #5449de; }
+.dialog-backdrop { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; background: #17203654; }
+.dialog { position: relative; width: min(92vw, 390px); padding: 27px; border-radius: 15px; background: #fff; box-shadow: 0 24px 60px #18203252; }
+.dialog h2 { margin: 12px 0 6px; font: 700 20px 'Plus Jakarta Sans'; }
+.dialog p { margin: 0 0 18px; color: #7b8498; font-size: 13px; }
+.dialog input { width: 100%; margin-bottom: 14px; padding: 11px 12px; border: 1px solid #dfe2ea; border-radius: 8px; outline-color: #665bea; }
+.dialog .primary { width: 100%; justify-content: center; }
+.close { position: absolute; top: 14px; right: 14px; border: 0; background: transparent; color: #858da0; }
+.asset-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 4; width: min(92vw, 350px); padding: 62px 25px 24px; background: #fff; box-shadow: -12px 0 30px #20243518; }
+.drawer-preview { height: 145px; padding: 12px; border-radius: 11px; color: #fff; font-size: 11px; font-weight: 700; }
+.asset-drawer h2 { margin: 20px 0 7px; font: 700 20px 'Plus Jakarta Sans'; }
+.asset-drawer > p { color: #81899a; font-size: 12px; }
+.asset-drawer h3 { margin: 27px 0 10px; font-size: 13px; }
+.asset-drawer dl { margin: 0 0 22px; font-size: 13px; }
+.asset-drawer dt { display: inline-block; width: 78px; margin: 7px 0; color: #8a92a4; }
+.asset-drawer dd { display: inline; margin: 0; color: #41495c; }
