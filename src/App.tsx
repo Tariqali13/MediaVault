@@ -7,6 +7,7 @@ import {
 import './App.css'
 import './interactive.css'
 import './menus.css'
+import './security.css'
 
 type Asset = {
   id: number
@@ -46,6 +47,9 @@ function App() {
   const [profileOpen, setProfileOpen] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)
   const [profileName, setProfileName] = useState(() => localStorage.getItem('mediavault-profile-name') ?? 'Tariq Ali')
+  const [securityOpen, setSecurityOpen] = useState(false)
+  const [mfaEnabled, setMfaEnabled] = useState(() => localStorage.getItem('mediavault-mfa') === 'true')
+  const [trustedDomain, setTrustedDomain] = useState('northstar.example')
   const fileInput = useRef<HTMLInputElement>(null)
 
   const filteredAssets = useMemo(
@@ -96,6 +100,7 @@ function App() {
     notify('Share link prepared for this demo asset')
   }
   const saveProfile = () => { const name = profileName.trim() || 'Tariq Ali'; setProfileName(name); localStorage.setItem('mediavault-profile-name', name); setEditingProfile(false); notify('Profile name saved') }
+  const toggleMfa = () => { const enabled = !mfaEnabled; setMfaEnabled(enabled); localStorage.setItem('mediavault-mfa', String(enabled)); notify(enabled ? 'Two-factor authentication enabled' : 'Two-factor authentication disabled') }
 
   return (
     <main className="app-shell">
@@ -110,7 +115,7 @@ function App() {
         </nav>
         <div className="sidebar-bottom">
           <button className="nav-item"><Star size={18} />Favorites</button>
-          <button className="nav-item"><ShieldCheck size={18} />Access & security</button>
+          <button className="nav-item" onClick={() => setSecurityOpen(true)}><ShieldCheck size={18} />Access & security</button>
           <div className="storage"><div><span>Storage</span><b>68% of 100 GB</b></div><div className="progress"><i /></div><button>Manage plan</button></div>
           <div className="profile-wrap"><button className="profile" onClick={() => setProfileOpen((open) => !open)}><span className="profile-avatar">{profileName.split(' ').map((part) => part[0]).join('').slice(0, 2)}</span><span><b>{profileName}</b><small>Workspace owner</small></span><MoreHorizontal size={18} /></button>{profileOpen && <div className="profile-menu"><b>{profileName}</b><small>tariq@mediavault.demo</small><hr /><button onClick={() => { setEditingProfile(true); setProfileOpen(false) }}>Edit profile</button><button onClick={() => notify('Workspace settings opened')}>Workspace settings</button><button onClick={() => notify('You are already signed in')}>Sign out</button></div>}</div>
         </div>
@@ -144,6 +149,7 @@ function App() {
       {uploading && <div className="upload-modal"><CloudUpload size={32} /><strong>Preparing secure upload</strong><span>Checking file types and workspace permissions…</span><div className="modal-progress"><i /></div></div>}
       {collectionOpen && <div className="dialog-backdrop"><form className="dialog" onSubmit={(event) => { event.preventDefault(); void createCollection() }}><button type="button" className="close" onClick={() => setCollectionOpen(false)}><X size={18} /></button><Folder size={24} /><h2>Create collection</h2><p>Use collections to keep campaign assets organized.</p><input autoFocus value={collectionName} onChange={(event) => setCollectionName(event.target.value)} placeholder="e.g. Spring launch" /><button className="primary" type="submit">Create collection</button></form></div>}
       {editingProfile && <div className="dialog-backdrop"><form className="dialog" onSubmit={(event) => { event.preventDefault(); saveProfile() }}><button type="button" className="close" onClick={() => setEditingProfile(false)}><X size={18} /></button><Users size={24} /><h2>Edit profile</h2><p>Update the name shown in this workspace.</p><input autoFocus value={profileName} onChange={(event) => setProfileName(event.target.value)} placeholder="Your name" /><button className="primary" type="submit">Save changes</button></form></div>}
+      {securityOpen && <div className="dialog-backdrop"><section className="security-dialog"><button className="close" onClick={() => setSecurityOpen(false)}><X size={18} /></button><div className="security-heading"><span><ShieldCheck size={22} /></span><div><h2>Access & security</h2><p>Manage workspace protection and member access.</p></div></div><article className="security-row"><div><b>Two-factor authentication</b><small>Require an extra verification step for workspace owners.</small></div><button className={mfaEnabled ? 'switch on' : 'switch'} aria-label="Toggle two-factor authentication" onClick={toggleMfa}><i /></button></article><article className="security-row"><div><b>Trusted upload domain</b><small>Use a domain label for this demo workspace.</small></div><div className="domain-form"><input value={trustedDomain} onChange={(event) => setTrustedDomain(event.target.value)} /><button className="secondary" onClick={() => notify('Trusted domain saved')}>Save</button></div></article><article className="security-row"><div><b>Active sessions</b><small>This browser · Lahore, Pakistan · Active now</small></div><button className="secondary" onClick={() => notify('Other sessions have been signed out')}>Sign out others</button></article><div className="security-audit"><b>Recent security activity</b><p><span />Two-factor authentication status checked <small>Just now</small></p><p><span />Workspace owner session verified <small>Today</small></p></div></section></div>}
       {selectedAsset && <aside className="asset-drawer"><button className="close" onClick={() => setSelected(null)}><X size={18} /></button><div className={`drawer-preview ${selectedAsset.color}`}><span>{selectedAsset.type}</span></div><h2>{selectedAsset.name}</h2><p>{selectedAsset.size} · Added {selectedAsset.updated}</p><h3>Details</h3><dl><dt>Owner</dt><dd>{selectedAsset.owner}</dd><dt>Status</dt><dd>Available</dd><dt>Tags</dt><dd>{selectedAsset.labels.join(', ')}</dd></dl><button className="secondary" onClick={() => void shareAsset()}>Copy share link</button></aside>}
       {toast && <div className="toast"><ShieldCheck size={18} />{toast}</div>}
     </main>
