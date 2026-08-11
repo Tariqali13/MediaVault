@@ -5,9 +5,10 @@ MediaVault is a polished digital-asset workspace for creative teams. It is an in
 ## Current product slice
 
 - Responsive asset library with grid and list views
-- Instant asset search and selection state
+- Instant asset search, file-type filters, and asset details
+- Upload, collection creation, secure-share, notification, profile, and access-control workflows
 - Workspace navigation, storage usage, activity and team affordances
-- Collection and upload interaction feedback
+- Local persistence for synthetic assets, collections, shares, and audit events through the Express API
 - Synthetic asset metadata only; no customer data or credentials
 
 ## Planned production architecture
@@ -60,10 +61,10 @@ npm run lint
 
 ## Product roadmap
 
-1. Workspace authentication and role-based access control
-2. Collection, tag, and share-link workflows
-3. Object storage uploads with background thumbnail processing
-4. API, database, audit log, automated tests, and CI/CD
+1. Production authentication and role-based access control
+2. PostgreSQL persistence, tenant isolation, and server-side authorization
+3. S3-compatible object storage with background thumbnail processing
+4. Real deployment, end-to-end browser tests, and observability
 
 ## Security
 
