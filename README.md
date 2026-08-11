@@ -36,6 +36,21 @@ npm run dev
 
 Open `http://localhost:5173`.
 
+### API prototype
+
+The API exposes tenant-scoped synthetic asset records and creates audit events for uploads.
+
+```bash
+npm run dev:api
+curl -H 'x-workspace-id: northstar-studio' http://localhost:4000/api/v1/assets
+```
+
+Run its smoke check while the API is running:
+
+```bash
+npm run test:api
+```
+
 ## Quality commands
 
 ```bash

@@ -3,3 +3,9 @@ services:
     build: .
     ports:
       - "8080:80"
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "4000:4000"
