@@ -45,12 +45,21 @@ function App() {
     window.setTimeout(() => setToast(''), 2600)
   }
 
-  const startUpload = () => {
+  const startUpload = async () => {
     setUploading(true)
-    window.setTimeout(() => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'}/api/v1/assets`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-workspace-id': 'northstar-studio' },
+        body: JSON.stringify({ name: 'Untitled workspace upload', type: 'JPG', size: '2.4 MB' }),
+      })
+      if (!response.ok) throw new Error('Upload service rejected the asset')
+      notify('Asset created and queued for processing')
+    } catch {
+      notify('Demo upload queued locally — start the API to persist it')
+    } finally {
       setUploading(false)
-      notify('3 sample assets added to your upload queue')
-    }, 850)
+    }
   }
 
   return (
