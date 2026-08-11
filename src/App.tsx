@@ -66,9 +66,13 @@ function App() {
     event.target.value = ''
   }
 
-  const createCollection = () => {
+  const createCollection = async () => {
     const name = collectionName.trim()
     if (!name) return
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'}/api/v1/collections`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-workspace-id': 'northstar-studio' }, body: JSON.stringify({ name }) })
+      if (!response.ok) throw new Error('Collection creation failed')
+    } catch { /* The interface remains usable without the local API. */ }
     setCollections((current) => [name, ...current])
     setCollectionName('')
     setCollectionOpen(false)
@@ -77,6 +81,15 @@ function App() {
   }
 
   const selectedAsset = assets.find((asset) => asset.id === selected)
+  const shareAsset = async () => {
+    if (!selectedAsset) return
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'}/api/v1/assets/${selectedAsset.id}/share-links`, { method: 'POST', headers: { 'x-workspace-id': 'northstar-studio' } })
+      const payload = await response.json()
+      if (response.ok) { await navigator.clipboard?.writeText(payload.data.url); notify('Secure share link copied to clipboard'); return }
+    } catch { /* Fall through to local confirmation for seed assets. */ }
+    notify('Share link prepared for this demo asset')
+  }
 
   return (
     <main className="app-shell">
@@ -123,8 +136,8 @@ function App() {
         </div>
       </section>
       {uploading && <div className="upload-modal"><CloudUpload size={32} /><strong>Preparing secure upload</strong><span>Checking file types and workspace permissions…</span><div className="modal-progress"><i /></div></div>}
-      {collectionOpen && <div className="dialog-backdrop"><form className="dialog" onSubmit={(event) => { event.preventDefault(); createCollection() }}><button type="button" className="close" onClick={() => setCollectionOpen(false)}><X size={18} /></button><Folder size={24} /><h2>Create collection</h2><p>Use collections to keep campaign assets organized.</p><input autoFocus value={collectionName} onChange={(event) => setCollectionName(event.target.value)} placeholder="e.g. Spring launch" /><button className="primary" type="submit">Create collection</button></form></div>}
-      {selectedAsset && <aside className="asset-drawer"><button className="close" onClick={() => setSelected(null)}><X size={18} /></button><div className={`drawer-preview ${selectedAsset.color}`}><span>{selectedAsset.type}</span></div><h2>{selectedAsset.name}</h2><p>{selectedAsset.size} · Added {selectedAsset.updated}</p><h3>Details</h3><dl><dt>Owner</dt><dd>{selectedAsset.owner}</dd><dt>Status</dt><dd>Available</dd><dt>Tags</dt><dd>{selectedAsset.labels.join(', ')}</dd></dl><button className="secondary" onClick={() => notify('Share link copied to clipboard')}>Copy share link</button></aside>}
+      {collectionOpen && <div className="dialog-backdrop"><form className="dialog" onSubmit={(event) => { event.preventDefault(); void createCollection() }}><button type="button" className="close" onClick={() => setCollectionOpen(false)}><X size={18} /></button><Folder size={24} /><h2>Create collection</h2><p>Use collections to keep campaign assets organized.</p><input autoFocus value={collectionName} onChange={(event) => setCollectionName(event.target.value)} placeholder="e.g. Spring launch" /><button className="primary" type="submit">Create collection</button></form></div>}
+      {selectedAsset && <aside className="asset-drawer"><button className="close" onClick={() => setSelected(null)}><X size={18} /></button><div className={`drawer-preview ${selectedAsset.color}`}><span>{selectedAsset.type}</span></div><h2>{selectedAsset.name}</h2><p>{selectedAsset.size} · Added {selectedAsset.updated}</p><h3>Details</h3><dl><dt>Owner</dt><dd>{selectedAsset.owner}</dd><dt>Status</dt><dd>Available</dd><dt>Tags</dt><dd>{selectedAsset.labels.join(', ')}</dd></dl><button className="secondary" onClick={() => void shareAsset()}>Copy share link</button></aside>}
       {toast && <div className="toast"><ShieldCheck size={18} />{toast}</div>}
     </main>
   )

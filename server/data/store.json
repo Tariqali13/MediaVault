@@ -1,0 +1,61 @@
+{
+  "assets": [
+    {
+      "id": "asset_001",
+      "workspaceId": "northstar-studio",
+      "name": "Autumn campaign hero",
+      "type": "JPG",
+      "size": "8.4 MB",
+      "owner": "Maya Chen",
+      "status": "approved",
+      "createdAt": "2026-08-11T10:42:00Z",
+      "tags": [
+        "Campaign"
+      ],
+      "collectionId": "collection_campaigns"
+    },
+    {
+      "id": "asset_002",
+      "workspaceId": "northstar-studio",
+      "name": "Studio product set",
+      "type": "PNG",
+      "size": "4.1 MB",
+      "owner": "Samir Khan",
+      "status": "draft",
+      "createdAt": "2026-08-11T09:18:00Z",
+      "tags": [
+        "Product"
+      ],
+      "collectionId": "collection_brand"
+    }
+  ],
+  "collections": [
+    {
+      "id": "collection_brand",
+      "workspaceId": "northstar-studio",
+      "name": "Brand essentials",
+      "createdAt": "2026-08-01T09:00:00Z"
+    },
+    {
+      "id": "collection_campaigns",
+      "workspaceId": "northstar-studio",
+      "name": "Campaigns",
+      "createdAt": "2026-08-02T09:00:00Z"
+    },
+    {
+      "id": "collection_product",
+      "workspaceId": "northstar-studio",
+      "name": "Product photography",
+      "createdAt": "2026-08-03T09:00:00Z"
+    }
+  ],
+  "shares": [],
+  "auditEvents": [
+    {
+      "id": "event_seed",
+      "action": "workspace.created",
+      "occurredAt": "2026-08-01T09:00:00Z",
+      "summary": "Northstar Studio workspace initialized"
+    }
+  ]
+}
