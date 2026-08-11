@@ -1,6 +1,10 @@
 # MediaVault
 
+[![Live demo](https://img.shields.io/badge/Live%20demo-Netlify-00C7B7?logo=netlify&logoColor=white)](https://media-vault-tariqali.netlify.app)
+
 MediaVault is a polished digital-asset workspace for creative teams. It is an independently built portfolio project that demonstrates product-focused frontend engineering, asset organisation workflows, accessible interaction design, and a foundation for secure multi-tenant media operations.
+
+**[Open the live demo →](https://media-vault-tariqali.netlify.app)**
 
 ## Current product slice
 
@@ -8,8 +12,12 @@ MediaVault is a polished digital-asset workspace for creative teams. It is an in
 - Instant asset search, file-type filters, and asset details
 - Upload, collection creation, secure-share, notification, profile, and access-control workflows
 - Workspace navigation, storage usage, activity and team affordances
-- Local persistence for synthetic assets, collections, shares, and audit events through the Express API
+- Demo-ready collection, upload, and sharing workflows backed by a same-origin Netlify Function
 - Synthetic asset metadata only; no customer data or credentials
+
+## Deployment
+
+The public demo is deployed on Netlify. The React/Vite client is served from `dist` and a small Netlify Function provides same-origin demo endpoints for collection creation, uploads, and share links. Demo responses are intentionally stateless and use synthetic data only.
 
 ## Planned production architecture
 
@@ -64,7 +72,7 @@ npm run lint
 1. Production authentication and role-based access control
 2. PostgreSQL persistence, tenant isolation, and server-side authorization
 3. S3-compatible object storage with background thumbnail processing
-4. Real deployment, end-to-end browser tests, and observability
+4. End-to-end browser tests and observability
 
 ## Security
 

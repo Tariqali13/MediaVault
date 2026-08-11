@@ -30,6 +30,8 @@ const initialAssets: Asset[] = [
   { id: 6, name: 'Launch social toolkit', type: 'ZIP', size: '24.5 MB', owner: 'Olivia Reed', updated: 'Aug 03', labels: ['Campaign'], color: 'orange' },
 ]
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:4000' : '')
+
 function App() {
   const [query, setQuery] = useState('')
   const [assets, setAssets] = useState(initialAssets)
@@ -70,7 +72,7 @@ function App() {
     setUploading(true)
     const additions = files.map((file, index) => ({ id: Date.now() + index, name: file.name, type: (file.name.split('.').pop() ?? 'FILE').toUpperCase(), size: `${(file.size / 1024 / 1024).toFixed(1)} MB`, owner: 'Tariq Ali', updated: 'Just now', labels: ['Processing'], color: ['blue', 'violet', 'green'][index % 3] }))
     setAssets((current) => [...additions, ...current])
-    await Promise.all(files.map((file) => fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'}/api/v1/assets`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-workspace-id': 'northstar-studio' }, body: JSON.stringify({ name: file.name, type: (file.name.split('.').pop() ?? 'JPG').toUpperCase(), size: `${(file.size / 1024 / 1024).toFixed(1)} MB` }) }).catch(() => undefined)))
+    await Promise.all(files.map((file) => fetch(`${apiBaseUrl}/api/v1/assets`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-workspace-id': 'northstar-studio' }, body: JSON.stringify({ name: file.name, type: (file.name.split('.').pop() ?? 'JPG').toUpperCase(), size: `${(file.size / 1024 / 1024).toFixed(1)} MB` }) }).catch(() => undefined)))
     window.setTimeout(() => { setUploading(false); notify(`${files.length} asset${files.length > 1 ? 's' : ''} added to your library`) }, 500)
     event.target.value = ''
   }
@@ -79,7 +81,7 @@ function App() {
     const name = collectionName.trim()
     if (!name) return
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'}/api/v1/collections`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-workspace-id': 'northstar-studio' }, body: JSON.stringify({ name }) })
+      const response = await fetch(`${apiBaseUrl}/api/v1/collections`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-workspace-id': 'northstar-studio' }, body: JSON.stringify({ name }) })
       if (!response.ok) throw new Error('Collection creation failed')
     } catch { /* The interface remains usable without the local API. */ }
     setCollections((current) => [name, ...current])
@@ -93,7 +95,7 @@ function App() {
   const shareAsset = async () => {
     if (!selectedAsset) return
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000'}/api/v1/assets/${selectedAsset.id}/share-links`, { method: 'POST', headers: { 'x-workspace-id': 'northstar-studio' } })
+      const response = await fetch(`${apiBaseUrl}/api/v1/assets/${selectedAsset.id}/share-links`, { method: 'POST', headers: { 'x-workspace-id': 'northstar-studio' } })
       const payload = await response.json()
       if (response.ok) { await navigator.clipboard?.writeText(payload.data.url); notify('Secure share link copied to clipboard'); return }
     } catch { /* Fall through to local confirmation for seed assets. */ }
