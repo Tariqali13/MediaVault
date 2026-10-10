@@ -1,34 +1,14 @@
 {
-  "name": "media-vault",
+  "name": "mediavault",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "description": "Multi-tenant digital asset management: Postgres row-level security, role-based access, direct-to-storage uploads and a background media pipeline.",
+  "workspaces": ["packages/*", "apps/*"],
   "scripts": {
-    "dev": "vite",
-    "dev:api": "node server/index.js",
-    "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
-    "test:api": "node scripts/check-api.mjs"
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
   },
-  "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "lucide-react": "^0.468.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "@vitejs/plugin-react": "^4.0.3",
-    "eslint": "^8.45.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.3",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5"
-  }
+  "engines": { "node": ">=20" }
 }
