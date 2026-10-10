@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://mediavault-api.onrender.com/:path*" },
+    { "source": "/api/:path*", "destination": "https://mediavault-api-8ib0.onrender.com/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

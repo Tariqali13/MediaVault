@@ -24,12 +24,12 @@ The API runs migrations on start.
 
 1. **New → Blueprint**, pick this repository (`render.yaml`).
 2. Name the service `mediavault-api` so the URL matches the web proxy config, or update
-   `apps/web/vercel.json` / `netlify.toml` with your actual URL.
+   `apps/web/vercel.json` / the root `netlify.toml` with your actual URL.
 3. Set the prompted values:
    - `DATABASE_URL`: the Neon URL from step 1
    - `APP_ORIGIN`: your web URL, e.g. `https://mediavault.vercel.app`
    - `PUBLIC_API_URL`: the same origin plus `/api`, e.g. `https://mediavault.vercel.app/api`
-4. Check `https://mediavault-api.onrender.com/health`.
+4. Check `https://<your-service>.onrender.com/health`.
 
 On the free plan the service sleeps when idle (the first request takes up to a minute),
 and its disk is wiped on redeploy. With `STORAGE_DRIVER=local` that only affects files
@@ -44,7 +44,9 @@ Set `STORAGE_DRIVER=s3`, `S3_BUCKET`, `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY
 
 ## 3. Web on Vercel (or Netlify)
 
-1. Import the repository with root directory `apps/web` (framework: Vite).
+1. Vercel: import the repository with root directory `apps/web` (framework: Vite).
+   Netlify: import the repository with no base directory; the root `netlify.toml`
+   builds the web workspace (it needs `packages/shared`) and proxies `/api`.
 2. Deploy. `vercel.json` proxies `/api/*` to the Render service, so the browser talks to
    one origin and the session cookie stays first-party.
 

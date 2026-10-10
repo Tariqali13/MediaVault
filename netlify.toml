@@ -1,0 +1,20 @@
+# Netlify config for the web app. Build from the repo root so npm workspaces
+# (including packages/shared) install.
+[build]
+  command = "npm run build -w @mediavault/web"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Same-origin API: the session cookie stays first-party (SameSite=Lax).
+[[redirects]]
+  from = "/api/*"
+  to = "https://mediavault-api-8ib0.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
