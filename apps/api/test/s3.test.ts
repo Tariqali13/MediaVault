@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { S3Storage } from '../src/storage/s3.js';
 import { testJpeg } from './helpers.js';
 
@@ -10,12 +11,18 @@ import { testJpeg } from './helpers.js';
 const endpoint = process.env.TEST_S3_ENDPOINT;
 
 describe.skipIf(!endpoint)('S3 storage driver', () => {
-  const storage = new S3Storage(process.env.TEST_S3_BUCKET ?? 'mediavault-test', {
-    region: 'us-east-1',
-    endpoint,
+  const bucket = process.env.TEST_S3_BUCKET ?? 'mediavault-test';
+  const credentials = {
     accessKeyId: process.env.TEST_S3_ACCESS_KEY ?? 'minioadmin',
     secretAccessKey: process.env.TEST_S3_SECRET_KEY ?? 'minioadmin',
-    forcePathStyle: true,
+  };
+  const storage = new S3Storage(bucket, { region: 'us-east-1', endpoint, ...credentials, forcePathStyle: true });
+
+  beforeAll(async () => {
+    const admin = new S3Client({ region: 'us-east-1', endpoint, forcePathStyle: true, credentials });
+    await admin.send(new CreateBucketCommand({ Bucket: bucket })).catch((err) => {
+      if (!/BucketAlready/.test(String(err?.name))) throw err;
+    });
   });
 
   async function postUpload(ticket: { url: string; fields: Record<string, string> }, body: Buffer, type: string) {

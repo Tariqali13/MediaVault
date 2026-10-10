@@ -36,12 +36,13 @@ jobs:
       - name: Create non-superuser database role
         run: psql postgres://postgres:postgres@localhost:5432/postgres -f infra/postgres-init.sql
 
+      # MinIO stopped publishing new community images in 2025; pin the last public release,
+      # falling back to Chainguard's free build. The test creates its own bucket.
       - name: Start MinIO (S3-compatible storage)
         run: |
-          docker run -d --name minio -p 9000:9000 minio/minio server /data
+          docker run -d --name minio -p 9000:9000 minio/minio:RELEASE.2025-04-22T22-12-26Z server /data \
+            || docker run -d --name minio -p 9000:9000 cgr.dev/chainguard/minio:latest server /data
           for i in $(seq 1 30); do curl -sf localhost:9000/minio/health/ready && break; sleep 1; done
-          docker run --rm --network host --entrypoint sh minio/mc -c \
-            "mc alias set local http://localhost:9000 minioadmin minioadmin && mc mb local/mediavault-test"
 
       - run: npm ci
       - run: npm run lint
