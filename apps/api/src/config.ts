@@ -1,4 +1,18 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+
+/**
+ * Load .env from apps/api or the repo root using Node's built-in loader.
+ * Real environment variables always win (loadEnvFile never overwrites them).
+ */
+function loadEnvFiles(): void {
+  const apiDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  for (const file of [path.join(apiDir, '.env'), path.resolve(apiDir, '../../.env')]) {
+    if (existsSync(file)) process.loadEnvFile(file);
+  }
+}
 
 const bool = (def: 'true' | 'false') =>
   z
@@ -43,6 +57,7 @@ const EnvSchema = z.object({
 export type Config = z.infer<typeof EnvSchema>;
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
+  if (env === process.env) loadEnvFiles();
   const parsed = EnvSchema.safeParse(env);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`).join('\n');
