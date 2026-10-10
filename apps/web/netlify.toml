@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Same-origin API: the session cookie stays first-party (SameSite=Lax).
+[[redirects]]
+  from = "/api/*"
+  to = "https://mediavault-api.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
