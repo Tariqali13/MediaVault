@@ -1,85 +1,137 @@
 # MediaVault
 
-[![Live demo](https://img.shields.io/badge/Live%20demo-Netlify-00C7B7?logo=netlify&logoColor=white)](https://media-vault-tariqali.netlify.app)
+**A shared media library for creative teams, built as a real multi-tenant SaaS.**
 
-MediaVault is a polished digital-asset workspace for creative teams. It is an independently built portfolio project that demonstrates product-focused frontend engineering, asset organisation workflows, accessible interaction design, and a foundation for secure multi-tenant media operations.
+Teams upload pictures, video and PDFs straight to object storage, find them by title,
+tag or description, gather the selects into collections, and send clients expiring
+links. Every team's files are isolated by Postgres row-level security, so a bug in
+a query returns nothing rather than someone else's data.
 
-**[Open the live demo →](https://media-vault-tariqali.netlify.app)**
+[![CI](https://github.com/Tariqali13/MediaVault/actions/workflows/ci.yml/badge.svg)](https://github.com/Tariqali13/MediaVault/actions/workflows/ci.yml)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
 
-## Current product slice
+<p align="center">
+  <img src="docs/screenshots/library.png" alt="Library with three pictures circled in red as selected" width="860">
+</p>
 
-- Responsive asset library with grid and list views
-- Instant asset search, file-type filters, and asset details
-- Upload, collection creation, secure-share, notification, profile, and access-control workflows
-- Workspace navigation, storage usage, activity and team affordances
-- Demo-ready collection, upload, and sharing workflows backed by a same-origin Netlify Function
-- Synthetic asset metadata only; no customer data or credentials
+## What's interesting here
 
-## Deployment
+**Tenant isolation in the database, not in every WHERE clause.** Each request runs in
+a transaction that sets `app.workspace_id`; `FORCE ROW LEVEL SECURITY` policies compare
+against it on every tenant table. The tests prove it with deliberately careless SQL:
+an unfiltered `SELECT * FROM assets` returns only the caller's rows, inserts into
+another tenant fail, updates silently skip, and the context can't leak to the next
+request on a pooled connection.
 
-The public demo is deployed on Netlify. The React/Vite client is served from `dist` and a small Netlify Function provides same-origin demo endpoints for collection creation, uploads, and share links. Demo responses are intentionally stateless and use synthetic data only.
+**Uploads never touch the API.** The API reserves quota atomically (no two parallel
+uploads can squeeze past the limit), then hands the browser a signed POST policy. The
+bucket itself enforces the exact key, content type and maximum size. After upload, a
+background worker reads the bytes to check the file really is what it claims (an HTML
+file labelled `image/png` is rejected and its quota returned), extracts EXIF, honours
+orientation, and renders WebP thumbnails and previews.
 
-## Planned production architecture
+**One permission matrix, two consumers.** Roles (viewer, editor, admin, owner) live in a
+shared package. The API enforces them; the web app uses the same table to hide what you
+can't do. A test spells out every role/action pair, so any access change is a visible
+diff. Admins can't create admins or touch owners, and a workspace can never lose its
+last owner.
 
-```text
-React / TypeScript client
-        |
-        v
-Node.js API + workspace RBAC
-        |
-        +--> PostgreSQL (assets, collections, audit records)
-        +--> Redis / queue worker (thumbnails, metadata)
-        +--> S3-compatible object storage (originals and derivatives)
+**Details that usually get skipped:**
+- Keyset pagination (stable under concurrent uploads, no `OFFSET` scans) with millisecond
+  timestamps so cursors round-trip exactly through JavaScript.
+- Signed URLs pinned to hourly windows, so the same thumbnail has the same URL for an
+  hour and the browser cache actually works.
+- Share links and invites store only a SHA-256 of the token; the raw token is shown once.
+- Audit events are written in the same transaction as the change they describe.
+- Login takes the same time and returns the same error whether or not the email exists.
+- CSRF defence: `SameSite=Lax` session cookies plus an Origin check on every mutation,
+  with the API served same-origin through the web host's proxy.
+
+## Try it
+
+**Live demo:** _link added after deployment_ (see [DEPLOY.md](DEPLOY.md); runs on free tiers).
+
+"Try the demo" creates **your own private workspace** with a sample library and three
+teammates, so you can upload, delete, invite and change roles without affecting anyone
+else. Demo workspaces are deleted after 24 hours.
+
+| | |
+| --- | --- |
+| ![Asset details](docs/screenshots/asset.png) | ![People and roles](docs/screenshots/people.png) |
+| ![Public share page](docs/screenshots/share.png) | ![Sign in](docs/screenshots/welcome.png) |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    B[Browser] -->|"/api (same origin)"| API
+    B -->|signed POST / GET| S3[(Object storage<br/>S3, R2, B2, MinIO)]
+    API[Fastify API] -->|"tx + set_config(app.workspace_id)"| PG[(Postgres<br/>row-level security)]
+    API -->|enqueue| Q[[pg-boss queue<br/>in Postgres]]
+    Q --> W[Media worker<br/>sharp / libvips]
+    W --> S3
+    W --> PG
 ```
 
-The application will use tenant-scoped access checks, signed uploads, audit events, and background processing. These are planned engineering capabilities, not claims about the current frontend prototype.
+- **No Redis, no separate queue service.** Jobs live in Postgres via pg-boss, so the
+  whole system is one database plus object storage, and runs on free tiers.
+- **The worker can run in-process** (one free service) or as its own deployment
+  (`RUN_WORKER_IN_PROCESS=false`, `node dist/worker.js`) when uploads are heavy.
+- **Storage is behind a five-method interface.** The S3 driver works with any
+  S3-compatible service; a local driver reproduces signed POST/GET semantics on disk so
+  development and tests behave the same as production.
 
-## Local development
+More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the [decision records](docs/adr).
 
-Requires Node.js 18 or later.
+## Tests
 
 ```bash
+npm test     # 41 API integration tests, 71 permission-matrix cases, 5 layout tests
+```
+
+The API suite runs against real Postgres **as a non-superuser** and refuses to start
+otherwise (superusers bypass RLS, which would make the isolation tests meaningless). CI
+also runs the S3 driver against MinIO, including the bucket rejecting an oversized upload.
+
+## Run locally
+
+```bash
+# Postgres with a non-superuser app role
+psql -U postgres -f infra/postgres-init.sql
 npm install
-npm run dev
+npm run dev          # API on :4100, web on :5174 (API docs at /api/docs)
 ```
 
-Open `http://localhost:5173`.
+Or the full stack with S3-compatible storage and a separate worker:
+`docker compose up --build`, then `npm run dev -w @mediavault/web`.
 
-### API prototype
+## Stack
 
-The API exposes tenant-scoped synthetic asset records and creates audit events for uploads.
+| | |
+| --- | --- |
+| API | Node.js 22, TypeScript (strict), Fastify 5, Zod, Drizzle ORM, OpenAPI |
+| Data | PostgreSQL 16 (row-level security, full-text search, trigram index), pg-boss |
+| Media | sharp/libvips, EXIF parsing, S3 presigned POST |
+| Auth | argon2id, httpOnly session cookies, hashed invite and share tokens |
+| Web | React 19, TanStack Query, justified-row gallery, no UI kit |
+| Quality | Vitest against real Postgres and MinIO, GitHub Actions, Docker |
 
-```bash
-npm run dev:api
-curl -H 'x-workspace-id: northstar-studio' http://localhost:4000/api/v1/assets
+## Project layout
+
+```
+packages/shared     roles, permission matrix, API contracts (used by API and web)
+apps/api/migrations schema and row-level security policies
+apps/api/src
+  db/               Drizzle schema, tenant-scoped transactions, migrator
+  routes/           auth, assets, collections, shares, members
+  storage/          S3 and local drivers
+  media/            file sniffing, image processing, job queue
+  demo/             per-visitor demo workspaces and procedural sample art
+apps/web/src        React client
+docs/               architecture notes and ADRs
 ```
 
-Run its smoke check while the API is running:
+---
 
-```bash
-npm run test:api
-```
-
-## Quality commands
-
-```bash
-npm run build
-npm run lint
-```
-
-## Product roadmap
-
-1. Production authentication and role-based access control
-2. PostgreSQL persistence, tenant isolation, and server-side authorization
-3. S3-compatible object storage with background thumbnail processing
-4. End-to-end browser tests and observability
-
-## Security
-
-Never commit credentials, real media, client data, or production endpoints. Use synthetic data and `.env` files kept outside version control.
-
-See [SECURITY.md](SECURITY.md) for the reporting policy.
-
-## License
-
-MIT
+Built by [Tariq Ali](https://tariqali.dev). Sample images are generated procedurally; no
+real customer data or media is included.

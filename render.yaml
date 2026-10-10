@@ -1,0 +1,26 @@
+# Render Blueprint for the API (free plan). Postgres comes from Neon (free tier).
+services:
+  - type: web
+    name: mediavault-api
+    runtime: docker
+    plan: free
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_ORIGIN
+        sync: false
+      - key: PUBLIC_API_URL
+        sync: false
+      - key: SIGNING_SECRET
+        generateValue: true
+      - key: STORAGE_DRIVER
+        value: local
+      - key: DEMO_MODE
+        value: 'true'
+      - key: RUN_WORKER_IN_PROCESS
+        value: 'true'

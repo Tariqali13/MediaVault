@@ -120,7 +120,7 @@ export async function createDemoWorkspace(s: Services): Promise<{ userId: string
   // Demo accounts can't be signed into with a password: the hash is of a random secret nobody knows.
   const unusable = await hashPassword(newToken());
 
-  const people = [{ id: userId, name: 'You (demo)', role: 'owner' as const }, ...TEAMMATES.map((t) => ({ ...t, id: randomUUID() }))];
+  const people = [{ id: userId, name: 'Alex Morgan', role: 'owner' as const }, ...TEAMMATES.map((t) => ({ ...t, id: randomUUID() }))];
   await withContext(s.pool, { userId }, async (tx) => {
     for (const p of people) {
       await tx.insert(schema.users).values({ id: p.id, name: p.name, email: `${p.name.split(' ')[0]!.toLowerCase().replace(/[^a-z]/g, '')}+${suffix}@demo.mediavault.dev`, passwordHash: unusable });
