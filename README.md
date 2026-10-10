@@ -49,7 +49,9 @@ last owner.
 
 ## Try it
 
-**Live demo:** _link added after deployment_ (see [DEPLOY.md](DEPLOY.md); runs on free tiers).
+**Live demo: [media-vault-tariqali.netlify.app](https://media-vault-tariqali.netlify.app)** (free tier:
+the first visit after a quiet spell takes ~30 s while the API wakes up). Deployment notes
+are in [DEPLOY.md](DEPLOY.md).
 
 "Try the demo" creates **your own private workspace** with a sample library and three
 teammates, so you can upload, delete, invite and change roles without affecting anyone
