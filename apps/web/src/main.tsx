@@ -18,6 +18,7 @@ import { People } from './pages/People';
 import { Activity } from './pages/Activity';
 import { PublicShare } from './pages/PublicShare';
 import { AcceptInvite } from './pages/AcceptInvite';
+import { WarmUpGate } from './components/WarmUpGate';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,7 +51,9 @@ const router = createBrowserRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <WarmUpGate>
+        <RouterProvider router={router} />
+      </WarmUpGate>
     </QueryClientProvider>
   </StrictMode>,
 );

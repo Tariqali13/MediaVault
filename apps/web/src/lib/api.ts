@@ -23,7 +23,15 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     throw new ApiError(0, 'network_error', 'Can’t reach MediaVault. Check your connection and try again.');
   }
   const text = await res.text();
-  const body = text ? JSON.parse(text) : {};
+  let body: { error?: { code?: string; message?: string } } & Record<string, unknown> = {};
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      // A sleeping API answers through the proxy with an HTML holding page, not JSON.
+      throw new ApiError(503, 'waking', 'MediaVault is still starting up. Give it a few seconds and try again.');
+    }
+  }
   if (!res.ok) throw new ApiError(res.status, body?.error?.code ?? 'error', body?.error?.message ?? `Request failed (${res.status})`);
   return body as T;
 }
