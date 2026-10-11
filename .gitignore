@@ -7,3 +7,7 @@ coverage
 *.log
 .DS_Store
 .data
+
+# Build caches and local Redis snapshots
+*.tsbuildinfo
+dump.rdb
