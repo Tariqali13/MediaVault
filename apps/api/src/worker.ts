@@ -13,7 +13,7 @@ const log = pino({ level: config.LOG_LEVEL });
 const pool = createPool(config.DATABASE_URL);
 const storage = createStorage(config);
 const queue = await MediaQueue.start(config.DATABASE_URL);
-await queue.work({ pool, storage, log }, 4);
+await queue.work({ pool, storage, log }, Number(process.env.WORKER_CONCURRENCY ?? 4));
 log.info('media worker started');
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

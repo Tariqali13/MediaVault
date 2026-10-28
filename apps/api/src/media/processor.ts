@@ -39,15 +39,31 @@ export async function sniffMatches(body: Buffer, declared: string): Promise<bool
   return false;
 }
 
+// The API runs on small instances (512 MB). libvips defaults to one thread per core
+// and a large operation cache, which is fast on a big machine and an out-of-memory
+// kill on a small one. One thread and no cache keep each image's memory predictable.
+sharp.concurrency(1);
+sharp.cache(false);
+
+/**
+ * Largest image we will decode: 50 megapixels covers full-frame camera files.
+ * Decoded RGBA at that size is ~200 MB, so the cap is also a memory bound.
+ */
+export const MAX_INPUT_PIXELS = 50_000_000;
+
 export async function processImage(body: Buffer): Promise<ProcessedImage> {
-  // Respect EXIF orientation, and cap decode size to defend against decompression bombs.
-  const base = sharp(body, { limitInputPixels: 100_000_000, failOn: 'error' }).rotate();
-  const meta = await sharp(body).metadata();
-  const [thumb, preview, stats] = await Promise.all([
-    base.clone().resize({ width: THUMB_WIDTH, withoutEnlargement: true }).webp({ quality: 78 }).toBuffer(),
-    base.clone().resize({ width: PREVIEW_WIDTH, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer(),
-    base.clone().stats(),
-  ]);
+  const meta = await sharp(body, { limitInputPixels: MAX_INPUT_PIXELS }).metadata();
+
+  // Decode the original ONCE, at reduced size: resizing straight from the input lets
+  // libvips shrink JPEG/WebP while decoding, instead of holding the full-size image.
+  // Everything else is derived from that small preview, one step at a time.
+  const preview = await sharp(body, { limitInputPixels: MAX_INPUT_PIXELS, failOn: 'error', sequentialRead: true })
+    .rotate() // respect EXIF orientation
+    .resize({ width: PREVIEW_WIDTH, withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toBuffer();
+  const thumb = await sharp(preview).resize({ width: THUMB_WIDTH, withoutEnlargement: true }).webp({ quality: 78 }).toBuffer();
+  const stats = await sharp(thumb).stats();
 
   // EXIF orientations 5–8 swap width and height.
   const swapped = (meta.orientation ?? 1) >= 5;

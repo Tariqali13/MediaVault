@@ -48,6 +48,8 @@ const EnvSchema = z.object({
   WORKSPACE_QUOTA_BYTES: z.coerce.number().int().positive().default(1024 * 1024 * 1024),
   /** Process media jobs in the API process (free-tier single service) instead of a separate worker. */
   RUN_WORKER_IN_PROCESS: bool('true'),
+  /** Media jobs processed at once. 1 keeps image memory within a 512 MB instance. */
+  WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(16).default(1),
   /** "Try the demo" gives each visitor a private sample workspace, deleted after 24 hours. */
   DEMO_MODE: bool('true'),
   RATE_LIMIT_ENABLED: bool('true'),

@@ -16,7 +16,7 @@ const sessions = new Sessions(pool, config.SESSION_TTL_DAYS);
 const queue = await MediaQueue.start(config.DATABASE_URL);
 const app = await buildApp({ config, pool, sessions, storage, queue });
 
-if (config.RUN_WORKER_IN_PROCESS) await queue.work({ pool, storage, log: app.log });
+if (config.RUN_WORKER_IN_PROCESS) await queue.work({ pool, storage, log: app.log }, config.WORKER_CONCURRENCY);
 if (config.DEMO_MODE) {
   // Render the sample library in the background so the first "Try the demo" is fast.
   ensureSeed(storage).catch((err) => app.log.error({ err }, 'demo seed failed'));
